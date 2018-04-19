@@ -1,0 +1,71 @@
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:2.3.0'
+    }
+}
+
+apply plugin: 'com.android.application'
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+    maven {
+        url 'http://4thline.org/m2'
+    }
+}
+
+dependencies {
+    // Android support
+    compile 'com.android.support:appcompat-v7:25.3.1'
+
+    // Cling
+    compile group: 'org.fourthline.cling', name: 'cling-core', version: '2.1.1'
+    compile group: 'org.fourthline.cling', name: 'cling-support', version: '2.1.1'
+    compile group: 'org.eclipse.jetty', name: 'jetty-server', version: '8.1.18.v20150929'
+    compile group: 'org.eclipse.jetty', name: 'jetty-servlet', version: '8.1.18.v20150929'
+    compile group: 'org.eclipse.jetty', name: 'jetty-client', version: '8.1.18.v20150929'
+    compile group: 'org.slf4j', name: 'slf4j-jdk14', version: '1.7.14'
+
+    compile('de.psdev.licensesdialog:licensesdialog:1.8.1') {
+        exclude module: 'support-v4'
+    }
+}
+
+android {
+    compileSdkVersion 26
+    defaultConfig {
+        applicationId "com.romssilva.smartupnp.smartupnp"
+        minSdkVersion 15
+        targetSdkVersion 26
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+
+    packagingOptions {
+        exclude 'META-INF/beans.xml'
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation 'com.android.support:appcompat-v7:26.1.0'
+    implementation 'com.android.support:design:26.1.0'
+    implementation 'com.android.support.constraint:constraint-layout:1.0.2'
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'com.android.support.test:runner:1.0.1'
+    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
+}
+dependencies {
+    implementation 'com.android.support.constraint:constraint-layout:+'
+}
