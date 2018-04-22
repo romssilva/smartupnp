@@ -1,10 +1,13 @@
 package com.romssilva.smartupnp.smartupnp;
 
+import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.os.Build;
 import android.os.IBinder;
+import android.support.annotation.RequiresApi;
 import android.support.design.widget.TabLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -54,6 +57,11 @@ public class MainActivity extends AppCompatActivity {
     /**
      * The {@link ViewPager} that will host the section contents.
      */
+
+    private static final String TAG = "MainActivity";
+
+    private Activity mainActivity;
+
     private ViewPager mViewPager;
 
     private BrowseRegistryListener registryListener = new BrowseRegistryListener();
@@ -61,10 +69,12 @@ public class MainActivity extends AppCompatActivity {
     private AndroidUpnpService upnpService;
 
     private SearchTab searchTab;
+    private CameraTab cameraTab;
 
     private ServiceConnection serviceConnection = new ServiceConnection() {
 
         public void onServiceConnected(ComponentName className, IBinder service) {
+            Log.i(TAG, "STARTING UPNP SERVICE.");
             upnpService = (AndroidUpnpService) service;
 
             // Get ready for future device advertisements
@@ -75,6 +85,7 @@ public class MainActivity extends AppCompatActivity {
                 registryListener.deviceAdded(device);
             }
 
+            Log.i(TAG, "WILL START SEARCHING.");
             // Search asynchronously for all devices, they will respond soon
             upnpService.getControlPoint().search();
         }
@@ -89,6 +100,8 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        mainActivity = this;
+
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         // Create the adapter that will return a fragment for each of the three
@@ -96,19 +109,38 @@ public class MainActivity extends AppCompatActivity {
         mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
 
         // Set up the ViewPager with the sections adapter.
-        mViewPager = (ViewPager) findViewById(R.id.container);
+        mViewPager = findViewById(R.id.container);
         mViewPager.setAdapter(mSectionsPagerAdapter);
 
-        TabLayout tabLayout = (TabLayout) findViewById(R.id.tabs);
+        TabLayout tabLayout = findViewById(R.id.tabs);
 
-        mViewPager.setCurrentItem(0);
+        mViewPager.setCurrentItem(1);
         mViewPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(tabLayout) {
+            @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
             @Override
-            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
-                super.onPageScrolled(position, positionOffset, positionOffsetPixels);
-                if (position == 2 && upnpService != null) {
-                    upnpService.getRegistry().removeAllRemoteDevices();
-                    upnpService.getControlPoint().search();
+            public void onPageSelected(int position) {
+                super.onPageSelected(position);
+
+                if (position != 0 && cameraTab != null) {
+                    cameraTab.stop();
+                }
+
+                if (position == 0 && cameraTab != null) {
+                    cameraTab.start();
+                }
+
+                if (position == 2) {
+                    if (upnpService == null) {
+                        // This will start the UPnP service if it wasn't already started
+                        getApplicationContext().bindService(
+                                new Intent(mainActivity, AndroidUpnpServiceImpl.class),
+                                serviceConnection,
+                                Context.BIND_AUTO_CREATE
+                        );
+                    } else {
+                        upnpService.getRegistry().removeAllRemoteDevices();
+                        upnpService.getControlPoint().search();
+                    }
                 }
             }
         });
@@ -127,13 +159,6 @@ public class MainActivity extends AppCompatActivity {
         // Fix the logging integration between java.util.logging and Android internal logging
         org.seamless.util.logging.LoggingUtil.resetRootHandler(
                 new FixedAndroidLogHandler()
-        );
-
-        // This will start the UPnP service if it wasn't already started
-        getApplicationContext().bindService(
-                new Intent(this, AndroidUpnpServiceImpl.class),
-                serviceConnection,
-                Context.BIND_AUTO_CREATE
         );
     }
 
@@ -186,11 +211,13 @@ public class MainActivity extends AppCompatActivity {
             // Return a PlaceholderFragment (defined as a static inner class below).
             switch (position) {
                 case 0:
-                    return new CameraTab();
+                    cameraTab = new CameraTab();
+                    return cameraTab;
                 case 1:
                     return new HomeTab();
                 case 2:
-                    return new SearchTab();
+                    searchTab = new SearchTab();
+                    return searchTab;
                 default:
                     return null;
             }

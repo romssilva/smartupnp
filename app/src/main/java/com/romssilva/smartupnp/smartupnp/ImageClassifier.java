@@ -90,7 +90,7 @@ public abstract class ImageClassifier {
 
     /** Classifies a frame from the preview stream. */
     String classifyFrame(Bitmap bitmap) {
-        if (tflite == null) {
+        if (tflite == null || bitmap == null) {
             Log.e(TAG, "Image classifier has not been initialized; Skipped.");
             return "Uninitialized Classifier.";
         }

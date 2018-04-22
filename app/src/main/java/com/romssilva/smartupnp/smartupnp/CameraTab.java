@@ -78,10 +78,12 @@ public class CameraTab extends Fragment {
     private static final boolean USE_FRONT_CAMERA = true;
 
     private String cameraId;
+    private CameraManager cameraManager;
     private CameraDevice cameraDevice;
     private CameraCaptureSession mCameraCaptureSession;
     private CaptureRequest.Builder builder;
     private Size imageDimension;
+    private Boolean surfaceTextureAvailable = false;
 
     private static final int REQUEST_CAMERA_PERMISSION = 200;
     private Handler mBackgroundHandler;
@@ -148,7 +150,7 @@ public class CameraTab extends Fragment {
             @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
             @Override
             public void onSurfaceTextureAvailable(SurfaceTexture surfaceTexture, int i, int i1) {
-                openCamera();
+
             }
 
             @Override
@@ -168,18 +170,6 @@ public class CameraTab extends Fragment {
         });
 
         return rootView;
-    }
-
-    @Override
-    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
-        try {
-            // create either a new ImageClassifierQuantizedMobileNet or an ImageClassifierFloatInception
-            classifier = new ImageClassifierQuantizedMobileNet(getActivity());
-        } catch (IOException e) {
-            Log.e(TAG, "Failed to initialize an image classifier.", e);
-        }
-        startBackgroundThread();
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
@@ -228,7 +218,7 @@ public class CameraTab extends Fragment {
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     private void openCamera() {
-        CameraManager cameraManager = (CameraManager) getActivity().getSystemService(Context.CAMERA_SERVICE);
+        cameraManager = (CameraManager) getActivity().getSystemService(Context.CAMERA_SERVICE);
         try {
 
             if (USE_FRONT_CAMERA) {
@@ -289,12 +279,7 @@ public class CameraTab extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        startBackgroundThread();
-        if (textureView.isAvailable()) {
-            openCamera();
-        } else {
-            textureView.setSurfaceTextureListener(textureListener);
-        }
+        Log.i(TAG," ######### onResume #########");
     }
 
     private void startBackgroundThread() {
@@ -310,29 +295,25 @@ public class CameraTab extends Fragment {
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
     @Override
     public void onPause() {
+        Log.i(TAG," ######### onPause #########");
         super.onPause();
-        stopBackgroundThread();
     }
 
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
     private void stopBackgroundThread() {
-        mBackgroundThread.quitSafely();
-        try {
-            mBackgroundThread.join();
-            mBackgroundThread = null;
-            mBackgroundHandler = null;
-            synchronized (lock) {
-                runClassifier = false;
+        if (mBackgroundThread != null) {
+            mBackgroundThread.quitSafely();
+            try {
+                mBackgroundThread.join();
+                mBackgroundThread = null;
+                mBackgroundHandler = null;
+                synchronized (lock) {
+                    runClassifier = false;
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
         }
-    }
-
-    @Override
-    public void onDestroy() {
-        classifier.close();
-        super.onDestroy();
     }
 
     /** Takes photos and classify them periodically. */
@@ -350,13 +331,13 @@ public class CameraTab extends Fragment {
         };
 
     private void classifyFrame() {
-        if (classifier == null || getActivity() == null || cameraDevice == null) {
+        if (classifier == null || getActivity() == null || cameraDevice == null || textureView == null) {
             showToast("Uninitialized Classifier or invalid context.");
             return;
         }
         Bitmap bitmap = textureView.getBitmap(classifier.getImageSizeX(), classifier.getImageSizeY());
         String textToShow = classifier.classifyFrame(bitmap);
-        bitmap.recycle();
+        if (bitmap != null) bitmap.recycle();
         showToast(textToShow);
     }
 
@@ -370,6 +351,35 @@ public class CameraTab extends Fragment {
                             textView.setText(text);
                         }
                     });
+        }
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    public void stop() {
+        stopBackgroundThread();
+        if (classifier != null) {
+            classifier.close();
+            classifier = null;
+        }
+        if (cameraDevice != null) cameraDevice.close();
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    public void start() {
+
+        try {
+            // create either a new ImageClassifierQuantizedMobileNet or an ImageClassifierFloatInception
+            if (classifier == null) classifier = new ImageClassifierQuantizedMobileNet(getActivity());
+        } catch (IOException e) {
+            Log.e(TAG, "Failed to initialize an image classifier.", e);
+        }
+
+        startBackgroundThread();
+
+        if (textureView.isAvailable()) {
+            openCamera();
+        } else {
+            textureView.setSurfaceTextureListener(textureListener);
         }
     }
 }
