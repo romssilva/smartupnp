@@ -1,8 +1,10 @@
 package com.romssilva.smartupnp.smartupnp;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.graphics.Camera;
 import android.graphics.ImageFormat;
 import android.graphics.SurfaceTexture;
@@ -23,9 +25,11 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.util.Size;
 import android.util.SparseArray;
 import android.util.SparseIntArray;
@@ -37,6 +41,8 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import org.tensorflow.lite.Interpreter;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -55,7 +61,11 @@ import java.util.UUID;
 
 public class CameraTab extends Fragment {
 
+
+    private static final String TAG = "CameraTab";
+
     private TextureView textureView;
+    private TextView textView;
 
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
     static {
@@ -65,7 +75,7 @@ public class CameraTab extends Fragment {
         ORIENTATIONS.append(Surface.ROTATION_270, 180);
     }
 
-    private static final boolean USE_FRONT_CAMERA = false;
+    private static final boolean USE_FRONT_CAMERA = true;
 
     private String cameraId;
     private CameraDevice cameraDevice;
@@ -76,6 +86,10 @@ public class CameraTab extends Fragment {
     private static final int REQUEST_CAMERA_PERMISSION = 200;
     private Handler mBackgroundHandler;
     private HandlerThread mBackgroundThread;
+
+    private ImageClassifier classifier;
+    private Boolean runClassifier = false;
+    private final Object lock = new Object();
 
     private CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback() {
         @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
@@ -127,6 +141,7 @@ public class CameraTab extends Fragment {
         View rootView = inflater.inflate(R.layout.camera_tab, container, false);
 
         textureView = rootView.findViewById(R.id.textureView);
+        textView = rootView.findViewById(R.id.textView);
 
         assert textureView != null;
         textureView.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
@@ -153,6 +168,18 @@ public class CameraTab extends Fragment {
         });
 
         return rootView;
+    }
+
+    @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        try {
+            // create either a new ImageClassifierQuantizedMobileNet or an ImageClassifierFloatInception
+            classifier = new ImageClassifierQuantizedMobileNet(getActivity());
+        } catch (IOException e) {
+            Log.e(TAG, "Failed to initialize an image classifier.", e);
+        }
+        startBackgroundThread();
     }
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
@@ -274,6 +301,10 @@ public class CameraTab extends Fragment {
         mBackgroundThread = new HandlerThread("Camera Background");
         mBackgroundThread.start();
         mBackgroundHandler = new Handler(mBackgroundThread.getLooper());
+        synchronized (lock) {
+            runClassifier = true;
+        }
+        mBackgroundHandler.post(periodicClassify);
     }
 
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN_MR2)
@@ -290,8 +321,55 @@ public class CameraTab extends Fragment {
             mBackgroundThread.join();
             mBackgroundThread = null;
             mBackgroundHandler = null;
+            synchronized (lock) {
+                runClassifier = false;
+            }
         } catch (InterruptedException e) {
             e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void onDestroy() {
+        classifier.close();
+        super.onDestroy();
+    }
+
+    /** Takes photos and classify them periodically. */
+    private Runnable periodicClassify =
+        new Runnable() {
+            @Override
+            public void run() {
+                synchronized (lock) {
+                    if (runClassifier) {
+                        classifyFrame();
+                    }
+                }
+                mBackgroundHandler.post(periodicClassify);
+            }
+        };
+
+    private void classifyFrame() {
+        if (classifier == null || getActivity() == null || cameraDevice == null) {
+            showToast("Uninitialized Classifier or invalid context.");
+            return;
+        }
+        Bitmap bitmap = textureView.getBitmap(classifier.getImageSizeX(), classifier.getImageSizeY());
+        String textToShow = classifier.classifyFrame(bitmap);
+        bitmap.recycle();
+        showToast(textToShow);
+    }
+
+    private void showToast(final String text) {
+        final Activity activity = getActivity();
+        if (activity != null) {
+            activity.runOnUiThread(
+                    new Runnable() {
+                        @Override
+                        public void run() {
+                            textView.setText(text);
+                        }
+                    });
         }
     }
 }
