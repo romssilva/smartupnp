@@ -101,7 +101,7 @@ public class MainActivity extends AppCompatActivity {
 
         TabLayout tabLayout = (TabLayout) findViewById(R.id.tabs);
 
-        mViewPager.setCurrentItem(2);
+        mViewPager.setCurrentItem(0);
         mViewPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(tabLayout) {
             @Override
             public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
@@ -190,8 +190,7 @@ public class MainActivity extends AppCompatActivity {
                 case 1:
                     return new HomeTab();
                 case 2:
-                    searchTab = new SearchTab();
-                    return searchTab;
+                    return new SearchTab();
                 default:
                     return null;
             }
@@ -249,7 +248,9 @@ public class MainActivity extends AppCompatActivity {
         }
 
         public void deviceAdded(final Device device) {
-            searchTab.addDevice(device);
+            if (searchTab != null) {
+                searchTab.addDevice(device);
+            }
         }
 
         public void deviceRemoved(final Device device) {
