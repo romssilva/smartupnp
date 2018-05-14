@@ -62,6 +62,10 @@ public abstract class ImageClassifier {
     private static final int FILTER_STAGES = 3;
     private static final float FILTER_FACTOR = 0.4f;
 
+    private ClassificationManager classificationManager;
+    private final int NUMBER_OF_CLASSIFICATIONS_BEFORE_GUESS = 12;
+    private final int MAX_NUMBER_OF_CLASSIFIED_CLASSES = 10;
+
     private PriorityQueue<Map.Entry<String, Float>> sortedLabels =
             new PriorityQueue<>(
                     RESULTS_TO_SHOW,
@@ -85,6 +89,9 @@ public abstract class ImageClassifier {
                                 * getNumBytesPerChannel());
         imgData.order(ByteOrder.nativeOrder());
         filterLabelProbArray = new float[FILTER_STAGES][getNumLabels()];
+
+        classificationManager = new ClassificationManager();
+
         Log.d(TAG, "Created a Tensorflow Lite Image Classifier.");
     }
 
@@ -207,8 +214,12 @@ public abstract class ImageClassifier {
         final int size = sortedLabels.size();
         for (int i = 0; i < size; ++i) {
             Map.Entry<String, Float> label = sortedLabels.poll();
+            classificationManager.addOrUpdateClassification(label.getKey(), label.getValue());
             textToShow = String.format("\n%s: %4.2f", label.getKey(), label.getValue()) + textToShow;
         }
+
+        Map.Entry<String, Float> mostLikelyClass = classificationManager.getMostLikelyClass();
+
         return textToShow;
     }
 
@@ -295,6 +306,21 @@ public abstract class ImageClassifier {
      */
     protected int getNumLabels() {
         return labelList.size();
+    }
+
+    public boolean readyToGuess() {
+        if (classificationManager != null && classificationManager.getClassificationCount() > NUMBER_OF_CLASSIFICATIONS_BEFORE_GUESS) {
+            return true;
+        }
+        return false;
+    }
+
+    public Map.Entry<String, Float> getMostLikelyClass() {
+
+        Map.Entry<String, Float> mostLikelyClass = classificationManager.getMostLikelyClass();
+        
+        classificationManager.resetClassifications();
+        return mostLikelyClass;
     }
 }
 

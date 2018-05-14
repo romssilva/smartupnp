@@ -9,11 +9,7 @@ import android.os.Build;
 import android.os.IBinder;
 import android.support.annotation.RequiresApi;
 import android.support.design.widget.TabLayout;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 
 import android.support.v4.app.Fragment;
@@ -24,23 +20,19 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
 
 import android.widget.Toast;
 
 import org.fourthline.cling.android.AndroidUpnpService;
 import org.fourthline.cling.android.AndroidUpnpServiceImpl;
 import org.fourthline.cling.android.FixedAndroidLogHandler;
-import org.fourthline.cling.controlpoint.ActionCallback;
-import org.fourthline.cling.model.action.ActionInvocation;
-import org.fourthline.cling.model.message.UpnpResponse;
-import org.fourthline.cling.model.meta.Action;
 import org.fourthline.cling.model.meta.Device;
 import org.fourthline.cling.model.meta.LocalDevice;
 import org.fourthline.cling.model.meta.RemoteDevice;
-import org.fourthline.cling.model.meta.Service;
 import org.fourthline.cling.registry.DefaultRegistryListener;
 import org.fourthline.cling.registry.Registry;
+
+import java.util.Collection;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -130,16 +122,11 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 if (position == 2) {
-                    if (upnpService == null) {
-                        // This will start the UPnP service if it wasn't already started
-                        getApplicationContext().bindService(
-                                new Intent(mainActivity, AndroidUpnpServiceImpl.class),
-                                serviceConnection,
-                                Context.BIND_AUTO_CREATE
-                        );
-                    } else {
-                        upnpService.getRegistry().removeAllRemoteDevices();
-                        upnpService.getControlPoint().search();
+                    if (upnpService != null) {
+                        Collection<Device> devices = upnpService.getRegistry().getDevices();
+                        for (Device device : devices) {
+                            searchTab.addDevice(device);
+                        }
                     }
                 }
             }
@@ -147,19 +134,31 @@ public class MainActivity extends AppCompatActivity {
 
         tabLayout.addOnTabSelectedListener(new TabLayout.ViewPagerOnTabSelectedListener(mViewPager));
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
+//        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+//        fab.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View view) {
+//                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
+//                        .setAction("Action", null).show();
+//            }
+//        });
 
         // Fix the logging integration between java.util.logging and Android internal logging
         org.seamless.util.logging.LoggingUtil.resetRootHandler(
                 new FixedAndroidLogHandler()
         );
+
+        if (upnpService == null) {
+            // This will start the UPnP service if it wasn't already started
+            getApplicationContext().bindService(
+                    new Intent(mainActivity, AndroidUpnpServiceImpl.class),
+                    serviceConnection,
+                    Context.BIND_AUTO_CREATE
+            );
+        } else {
+            upnpService.getRegistry().removeAllRemoteDevices();
+            upnpService.getControlPoint().search();
+        }
     }
 
     @Override
@@ -235,7 +234,7 @@ public class MainActivity extends AppCompatActivity {
         /* Discovery performance optimization for very slow Android devices! */
         @Override
         public void remoteDeviceDiscoveryStarted(Registry registry, RemoteDevice device) {
-            deviceAdded(device);
+            //deviceAdded(device);
         }
 
         @Override
@@ -256,22 +255,22 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void remoteDeviceAdded(Registry registry, RemoteDevice device) {
-            deviceAdded(device);
+            //deviceAdded(device);
         }
 
         @Override
         public void remoteDeviceRemoved(Registry registry, RemoteDevice device) {
-            deviceRemoved(device);
+            //deviceRemoved(device);
         }
 
         @Override
         public void localDeviceAdded(Registry registry, LocalDevice device) {
-            deviceAdded(device);
+            //deviceAdded(device);
         }
 
         @Override
         public void localDeviceRemoved(Registry registry, LocalDevice device) {
-            deviceRemoved(device);
+            //deviceRemoved(device);
         }
 
         public void deviceAdded(final Device device) {
@@ -286,45 +285,12 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
         }
+    }
 
-        public void executeAction(AndroidUpnpService upnpService, Action action) {
-
-            ActionInvocation toggleActionInvocation = new GenericActionInvocation(action);
-
-            upnpService.getControlPoint().execute(new ActionCallback(toggleActionInvocation) {
-                @Override
-                public void success(ActionInvocation actionInvocation) {
-                    Log.i("Action Callback", "Success!");
-                }
-
-                @Override
-                public void failure(ActionInvocation actionInvocation, UpnpResponse upnpResponse, String s) {
-                    Log.i("Action Callback", "Failed!");
-                }
-            });
+    public Collection<Device> getDevicesList() {
+        if (upnpService != null) {
+            return upnpService.getRegistry().getDevices();
         }
-
-        public void executeActions (AndroidUpnpService upnpService, DeviceDisplay deviceDisplay) {
-            Device device = deviceDisplay.getDevice();
-
-            for (Service service : device.getServices()) {
-                for (Action action : service.getActions()) {
-
-                    ActionInvocation toggleActionInvocation = new GenericActionInvocation(action);
-
-                    upnpService.getControlPoint().execute(new ActionCallback(toggleActionInvocation) {
-                        @Override
-                        public void success(ActionInvocation actionInvocation) {
-                            Log.i("Action Callback", "Success!");
-                        }
-
-                        @Override
-                        public void failure(ActionInvocation actionInvocation, UpnpResponse upnpResponse, String s) {
-                            Log.i("Action Callback", "Failed!");
-                        }
-                    });
-                }
-            }
-        }
+        return null;
     }
 }

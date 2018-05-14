@@ -42,6 +42,7 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.fourthline.cling.model.meta.Device;
 import org.tensorflow.lite.Interpreter;
 
 import java.io.File;
@@ -52,7 +53,9 @@ import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -75,6 +78,7 @@ public class CameraTab extends Fragment {
         ORIENTATIONS.append(Surface.ROTATION_270, 180);
     }
 
+    private static final int CAMERA_ID = -1;
     private static final boolean USE_FRONT_CAMERA = true;
 
     private String cameraId;
@@ -92,6 +96,10 @@ public class CameraTab extends Fragment {
     private ImageClassifier classifier;
     private Boolean runClassifier = false;
     private final Object lock = new Object();
+
+    private int classificationCount = 0;
+    private final int CLASSIFICATION_COUNT_RATE = 4;
+    private final int CLASSIFICATION_THRESHOLD = 100;
 
     private CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback() {
         @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
@@ -221,7 +229,11 @@ public class CameraTab extends Fragment {
         cameraManager = (CameraManager) getActivity().getSystemService(Context.CAMERA_SERVICE);
         try {
 
-            if (USE_FRONT_CAMERA) {
+            if (CAMERA_ID >= 0) {
+                cameraId = CAMERA_ID + "";
+            }
+
+            else if (USE_FRONT_CAMERA) {
 
                 int cameraCount = cameraManager.getCameraIdList().length;
                 for (int camIdx = 0; camIdx < cameraCount; camIdx++) {
@@ -337,8 +349,44 @@ public class CameraTab extends Fragment {
         }
         Bitmap bitmap = textureView.getBitmap(classifier.getImageSizeX(), classifier.getImageSizeY());
         String textToShow = classifier.classifyFrame(bitmap);
+
+        //todo
+
+        if (classifier.readyToGuess()) {
+            Map.Entry<String, Float> mostLikelyClass = classifier.getMostLikelyClass();
+            showToast(mostLikelyClass);
+
+            StringBuilder sb = new StringBuilder();
+
+            Collection<Device> devices = ((MainActivity) getActivity()).getDevicesList();
+            if (devices != null) {
+                for (Device device : devices) {
+                    String[] words = mostLikelyClass.getKey().split(" ");
+                    for (String word : words) {
+                        if (device.getDetails().getFriendlyName().toLowerCase().contains(word.toLowerCase())) {
+                            sb.append(device.getDetails().getFriendlyName() + "\n");
+                        }
+                    }
+                }
+            }
+
+            showToast(sb.toString());
+        }
+
         if (bitmap != null) bitmap.recycle();
-        showToast(textToShow);
+    }
+
+    private void showToast(final Map.Entry<String, Float> entry) {
+        final Activity activity = getActivity();
+        if (activity != null) {
+            activity.runOnUiThread(
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        textView.setText(String.format("%s: %4.2f", entry.getKey(), entry.getValue()));
+                    }
+                });
+        }
     }
 
     private void showToast(final String text) {
