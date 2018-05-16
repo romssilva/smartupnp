@@ -29,6 +29,8 @@ import android.support.annotation.Nullable;
 import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.util.Size;
 import android.util.SparseArray;
@@ -80,6 +82,7 @@ public class CameraTab extends Fragment {
 
     private static final int CAMERA_ID = -1;
     private static final boolean USE_FRONT_CAMERA = true;
+    private static final boolean DEBUGGING = false;
 
     private String cameraId;
     private CameraManager cameraManager;
@@ -100,6 +103,9 @@ public class CameraTab extends Fragment {
     private int classificationCount = 0;
     private final int CLASSIFICATION_COUNT_RATE = 4;
     private final int CLASSIFICATION_THRESHOLD = 100;
+
+    private RecyclerView devicesList;
+    private DeviceInSightAdapter deviceInSightAdapter;
 
     private CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback() {
         @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
@@ -176,6 +182,14 @@ public class CameraTab extends Fragment {
 
             }
         });
+
+        devicesList = (RecyclerView) rootView.findViewById(R.id.devices_in_sight_list);
+
+        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(rootView.getContext());
+        devicesList.setLayoutManager(linearLayoutManager);
+
+        deviceInSightAdapter = new DeviceInSightAdapter(rootView.getContext());
+        devicesList.setAdapter(deviceInSightAdapter);
 
         return rootView;
     }
@@ -364,32 +378,32 @@ public class CameraTab extends Fragment {
                     String[] words = mostLikelyClass.getKey().split(" ");
                     for (String word : words) {
                         if (device.getDetails().getFriendlyName().toLowerCase().contains(word.toLowerCase())) {
-                            sb.append(device.getDetails().getFriendlyName() + "\n");
+                            addDevice(device);
                         }
                     }
                 }
             }
-
-            showToast(sb.toString());
         }
 
         if (bitmap != null) bitmap.recycle();
     }
 
     private void showToast(final Map.Entry<String, Float> entry) {
+        if (DEBUGGING) return;
         final Activity activity = getActivity();
         if (activity != null) {
             activity.runOnUiThread(
                 new Runnable() {
                     @Override
                     public void run() {
-                        textView.setText(String.format("%s: %4.2f", entry.getKey(), entry.getValue()));
+                    textView.setText(String.format("%s: %4.2f", entry.getKey(), entry.getValue()));
                     }
                 });
         }
     }
 
     private void showToast(final String text) {
+        if (DEBUGGING) return;
         final Activity activity = getActivity();
         if (activity != null) {
             activity.runOnUiThread(
@@ -429,5 +443,15 @@ public class CameraTab extends Fragment {
         } else {
             textureView.setSurfaceTextureListener(textureListener);
         }
+    }
+
+    public void addDevice(Device device) {
+        deviceInSightAdapter.addDevice(device);
+        getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                deviceInSightAdapter.notifyDataSetChanged();
+            }
+        });
     }
 }
