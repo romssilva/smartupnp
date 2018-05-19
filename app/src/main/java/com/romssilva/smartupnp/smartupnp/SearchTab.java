@@ -1,6 +1,7 @@
 package com.romssilva.smartupnp.smartupnp;
 
 import android.os.Bundle;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -26,15 +27,38 @@ public class SearchTab extends Fragment {
 
     private DeviceFoundAdapter deviceFoundAdapter;
 
+    private FloatingActionButton refreshButton;
+
     private TextView searchingLabel;
+
+    private AndroidUpnpService upnpService;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View rootView = inflater.inflate(R.layout.search_tab, container, false);
+        final View rootView = inflater.inflate(R.layout.search_tab, container, false);
 
         devicesList = (RecyclerView) rootView.findViewById(R.id.devices_found_list);
         searchingLabel = (TextView) rootView.findViewById(R.id.searching_label);
+
+        refreshButton = (FloatingActionButton) rootView.findViewById(R.id.refreshBtn);
+        refreshButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (upnpService != null) {
+                    upnpService.getRegistry().removeAllRemoteDevices();
+                    deviceFoundAdapter.removeAllDevices();
+                    getActivity().runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            deviceFoundAdapter.notifyDataSetChanged();
+                            searchingLabel.setVisibility(View.VISIBLE);
+                        }
+                    });
+                    upnpService.getControlPoint().search();
+                }
+            }
+        });
 
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(rootView.getContext());
         devicesList.setLayoutManager(linearLayoutManager);
@@ -54,5 +78,9 @@ public class SearchTab extends Fragment {
                 searchingLabel.setVisibility(View.GONE);
             }
         });
+    }
+
+    public void setUpnpService(AndroidUpnpService upnpService) {
+        this.upnpService = upnpService;
     }
 }

@@ -69,6 +69,8 @@ public class MainActivity extends AppCompatActivity {
             Log.i(TAG, "STARTING UPNP SERVICE.");
             upnpService = (AndroidUpnpService) service;
 
+            searchTab.setUpnpService(upnpService);
+
             // Get ready for future device advertisements
             upnpService.getRegistry().addListener(registryListener);
 
@@ -133,15 +135,6 @@ public class MainActivity extends AppCompatActivity {
         });
 
         tabLayout.addOnTabSelectedListener(new TabLayout.ViewPagerOnTabSelectedListener(mViewPager));
-
-//        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-//        fab.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View view) {
-//                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-//                        .setAction("Action", null).show();
-//            }
-//        });
 
         // Fix the logging integration between java.util.logging and Android internal logging
         org.seamless.util.logging.LoggingUtil.resetRootHandler(
@@ -255,7 +248,7 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void remoteDeviceAdded(Registry registry, RemoteDevice device) {
-            //deviceAdded(device);
+            deviceAdded(device);
         }
 
         @Override
@@ -265,7 +258,7 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void localDeviceAdded(Registry registry, LocalDevice device) {
-            //deviceAdded(device);
+            deviceAdded(device);
         }
 
         @Override

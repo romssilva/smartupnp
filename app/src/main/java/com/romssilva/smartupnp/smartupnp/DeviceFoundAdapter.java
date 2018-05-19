@@ -84,4 +84,8 @@ public class DeviceFoundAdapter extends RecyclerView.Adapter<DeviceFoundAdapter.
             deviceFoundSubtitle = (TextView) itemView.findViewById(R.id.device_found_subtitle);
         }
     }
+
+    public void removeAllDevices() {
+        devices.clear();
+    }
 }
