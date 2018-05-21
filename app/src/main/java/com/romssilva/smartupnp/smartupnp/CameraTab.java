@@ -377,7 +377,8 @@ public class CameraTab extends Fragment {
                 for (Device device : devices) {
                     String[] words = mostLikelyClass.getKey().split(" ");
                     for (String word : words) {
-                        if (device.getDetails().getFriendlyName().toLowerCase().contains(word.toLowerCase())) {
+//                        if (device.getDetails().getFriendlyName().toLowerCase().contains(word.toLowerCase())) {
+                        if (true) {
                             addDevice(device);
                         }
                     }
