@@ -1,16 +1,20 @@
 package com.romssilva.smartupnp.smartupnp;
 
+import android.annotation.TargetApi;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.os.Build;
 import android.os.IBinder;
+import android.support.annotation.RequiresApi;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
 
 import org.fourthline.cling.android.AndroidUpnpService;
@@ -35,6 +39,9 @@ public class DeviceActivity extends AppCompatActivity {
     private DeviceDisplay deviceDisplay;
     private TextView deviceName;
     private UDN udn;
+    private Button favoriteButton;
+
+    private FavoritesManagar favoritesManagar;
 
     private BrowseRegistryListener registryListener = new BrowseRegistryListener();
 
@@ -73,6 +80,25 @@ public class DeviceActivity extends AppCompatActivity {
 
         deviceName = findViewById(R.id.device_name);
         deviceName.setText("Gathering device information...");
+
+        favoriteButton = findViewById(R.id.favorite_btn);
+
+        favoriteButton.setOnClickListener(new View.OnClickListener() {
+            @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+            @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
+            @Override
+            public void onClick(View view) {
+                if (favoritesManagar.isFavorite(deviceDisplay)) {
+                    favoritesManagar.removeDevice(deviceDisplay);
+                    favoriteButton.setBackground(getDrawable(android.R.drawable.btn_star_big_off));
+                } else {
+                    favoritesManagar.addDevice(deviceDisplay);
+                    favoriteButton.setBackground(getDrawable(android.R.drawable.btn_star_big_on));
+                }
+            }
+        });
+
+        favoritesManagar = FavoritesManagar.getInstance();
 
         getIncomingIntent();
     }
@@ -148,9 +174,17 @@ public class DeviceActivity extends AppCompatActivity {
         public void deviceAdded(final Device device) {
             if (device.isFullyHydrated()) {
                 runOnUiThread(new Runnable() {
+                    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
                     @Override
                     public void run() {
+                        deviceDisplay = new DeviceDisplay(device);
                         deviceName.setText(device.getDetails().getFriendlyName());
+                        if (favoritesManagar.isFavorite(deviceDisplay)) {
+                            favoriteButton.setBackground(getDrawable(android.R.drawable.btn_star_big_on));
+                        } else {
+                            favoriteButton.setBackground(getDrawable(android.R.drawable.btn_star_big_off));
+                        }
+                        favoriteButton.setVisibility(View.VISIBLE);
                     }
                 });
                 for (Service service : device.getServices()) {

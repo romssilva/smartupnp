@@ -58,6 +58,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.UUID;
 
 /**
@@ -106,6 +108,8 @@ public class CameraTab extends Fragment {
 
     private RecyclerView devicesList;
     private DeviceInSightAdapter deviceInSightAdapter;
+
+    private List<Timer> timers;
 
     private CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback() {
         @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
@@ -190,6 +194,8 @@ public class CameraTab extends Fragment {
 
         deviceInSightAdapter = new DeviceInSightAdapter(rootView.getContext());
         devicesList.setAdapter(deviceInSightAdapter);
+
+        timers = new ArrayList<>();
 
         return rootView;
     }
@@ -377,9 +383,10 @@ public class CameraTab extends Fragment {
                 for (Device device : devices) {
                     String[] words = mostLikelyClass.getKey().split(" ");
                     for (String word : words) {
-//                        if (device.getDetails().getFriendlyName().toLowerCase().contains(word.toLowerCase())) {
-                        if (true) {
+                        if (device.getDetails().getFriendlyName().toLowerCase().contains(word.toLowerCase())) {
+                        //if (true) {
                             addDevice(device);
+                            setupTimer(device);
                         }
                     }
                 }
@@ -387,6 +394,31 @@ public class CameraTab extends Fragment {
         }
 
         if (bitmap != null) bitmap.recycle();
+    }
+
+    private void setupTimer(final Device device) {
+        int position = deviceInSightAdapter.getDevicePosition(device);
+
+        Timer timer = null;
+
+        if (timers.size() > position) {
+            timer = timers.get(position);
+        }
+
+        if (timer == null) {
+            timers.add(position, timer);
+        } else {
+            timer.cancel();
+        }
+
+        timer = new Timer();
+
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                removeDevice(device);
+            }
+        }, 10000);
     }
 
     private void showToast(final Map.Entry<String, Float> entry) {
@@ -448,6 +480,16 @@ public class CameraTab extends Fragment {
 
     public void addDevice(Device device) {
         deviceInSightAdapter.addDevice(device);
+        getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                deviceInSightAdapter.notifyDataSetChanged();
+            }
+        });
+    }
+
+    public void removeDevice(Device device) {
+        deviceInSightAdapter.removeDevice(device);
         getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {

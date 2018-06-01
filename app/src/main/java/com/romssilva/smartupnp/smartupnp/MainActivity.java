@@ -32,6 +32,7 @@ import org.fourthline.cling.model.meta.RemoteDevice;
 import org.fourthline.cling.registry.DefaultRegistryListener;
 import org.fourthline.cling.registry.Registry;
 
+import java.util.ArrayList;
 import java.util.Collection;
 
 public class MainActivity extends AppCompatActivity {
@@ -62,6 +63,7 @@ public class MainActivity extends AppCompatActivity {
 
     private SearchTab searchTab;
     private CameraTab cameraTab;
+    private HomeTab homeTab;
 
     private ServiceConnection serviceConnection = new ServiceConnection() {
 
@@ -121,6 +123,10 @@ public class MainActivity extends AppCompatActivity {
 
                 if (position == 0 && cameraTab != null) {
                     cameraTab.start();
+                }
+
+                if (position == 1) {
+                    updateFavorites();
                 }
 
                 if (position == 2) {
@@ -206,7 +212,8 @@ public class MainActivity extends AppCompatActivity {
                     cameraTab = new CameraTab();
                     return cameraTab;
                 case 1:
-                    return new HomeTab();
+                    homeTab = new HomeTab();
+                    return homeTab;
                 case 2:
                     searchTab = new SearchTab();
                     return searchTab;
@@ -285,5 +292,9 @@ public class MainActivity extends AppCompatActivity {
             return upnpService.getRegistry().getDevices();
         }
         return null;
+    }
+
+    public void updateFavorites() {
+        homeTab.updateFavorites();
     }
 }

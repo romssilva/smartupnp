@@ -81,4 +81,16 @@ public class DeviceInSightAdapter extends RecyclerView.Adapter<DeviceInSightAdap
             devices.add(deviceDisplay);
         }
     }
+
+    public void removeDevice(Device device) {
+        DeviceDisplay deviceDisplay = new DeviceDisplay(device);
+        if (devices.contains(deviceDisplay)) {
+            devices.remove(deviceDisplay);
+        }
+    }
+
+    public int getDevicePosition(Device device) {
+        DeviceDisplay deviceDisplay = new DeviceDisplay(device);
+        return devices.indexOf(deviceDisplay);
+    }
 }
