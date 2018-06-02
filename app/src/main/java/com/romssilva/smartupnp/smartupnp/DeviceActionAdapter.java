@@ -16,6 +16,7 @@ import android.widget.TextView;
 
 import org.fourthline.cling.android.AndroidUpnpService;
 import org.fourthline.cling.controlpoint.ActionCallback;
+import org.fourthline.cling.model.action.ActionArgumentValue;
 import org.fourthline.cling.model.action.ActionInvocation;
 import org.fourthline.cling.model.message.UpnpResponse;
 import org.fourthline.cling.model.meta.Action;
@@ -31,6 +32,7 @@ import java.util.ArrayList;
 public class DeviceActionAdapter extends RecyclerView.Adapter<DeviceActionAdapter.ViewHolder> {
 
     private ArrayList<Action> actions;
+    private ArrayList<Action> editableActions;
     private Context context;
     private AndroidUpnpService upnpService;
     private DeviceActivity deviceActivity;
@@ -40,6 +42,7 @@ public class DeviceActionAdapter extends RecyclerView.Adapter<DeviceActionAdapte
         this.context = context;
         this.upnpService = upnpService;
         this.deviceActivity = deviceActivity;
+        this.editableActions = new ArrayList<>();
     }
 
     @Override
@@ -51,22 +54,67 @@ public class DeviceActionAdapter extends RecyclerView.Adapter<DeviceActionAdapte
 
     @Override
     public void onBindViewHolder(final ViewHolder holder, int position) {
-        final Action action = actions.get(position);
+        final Action action = editableActions.get(position);
         final Boolean editable = action.getInputArguments().length > 0;
-
-
 
         if (editable) {
 
-            holder.actionName.setText("Set " + action.getFirstInputArgument().getRelatedStateVariableName());
+            holder.actionName.setText(action.getFirstInputArgument().getRelatedStateVariableName());
 
             StateVariable stateVariable = action.getService().getRelatedStateVariable(action.getFirstInputArgument());
             Datatype datatype = stateVariable.getTypeDetails().getDatatype();
 
             if (datatype.getBuiltin() == Datatype.Builtin.BOOLEAN) {
-                holder.aSwitch.setVisibility(View.VISIBLE);
 
-                holder.aSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                final Switch mSwitch = holder.aSwitch;
+
+                mSwitch.setVisibility(View.VISIBLE);
+
+                Action currentStatusAction = null;
+
+                for (Action oAction : action.getService().getActions()) {
+                    if (oAction.getOutputArguments().length > 0 &&
+                            oAction.getFirstOutputArgument().getRelatedStateVariableName().equals(stateVariable.getName())) {
+                        currentStatusAction = oAction;
+                        break;
+                    }
+                }
+
+                GenericActionInvocation genericActionInvocation = new GenericActionInvocation(currentStatusAction);
+
+                genericActionInvocation.getOutput(currentStatusAction.getFirstOutputArgument().getName());
+
+                upnpService.getControlPoint().execute(new ActionCallback(genericActionInvocation) {
+                    @Override
+                    public void success(final ActionInvocation actionInvocation) {
+                        deviceActivity.runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                if (actionInvocation.getOutput().length > 0) {
+
+                                    ActionArgumentValue actionArgumentValue = (ActionArgumentValue) actionInvocation.getOutputMap().get(actionInvocation.getAction().getFirstOutputArgument().getName());
+
+                                    String value = actionArgumentValue.toString();
+
+                                    mSwitch.setChecked(value.equals("1"));
+
+                                }
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void failure(ActionInvocation actionInvocation, final UpnpResponse upnpResponse, String s) {
+                        deviceActivity.runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                holder.actionIOField.setText("Fail! " + upnpResponse.getResponseDetails());
+                            }
+                        });
+                    }
+                });
+
+                mSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
                     @Override
                     public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
                         Log.e("invoking", "clicked");
@@ -145,53 +193,61 @@ public class DeviceActionAdapter extends RecyclerView.Adapter<DeviceActionAdapte
 
 
 
-        } else {
-            holder.actionName.setText(action.getFirstOutputArgument().getRelatedStateVariableName());
-
-            holder.actionIOField.setVisibility(View.VISIBLE);
-            holder.invokeButton.setVisibility(View.VISIBLE);
-
-            holder.invokeButton.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    Log.e("invoking", "clicked");
-                    GenericActionInvocation genericActionInvocation = new GenericActionInvocation(action);
-                    Log.e("invoking", "action created");
-
-                    genericActionInvocation.getOutput(action.getFirstOutputArgument().getName());
-
-                    upnpService.getControlPoint().execute(new ActionCallback(genericActionInvocation) {
-                        @Override
-                        public void success(final ActionInvocation actionInvocation) {
-                            deviceActivity.runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    if (actionInvocation.getOutput().length > 0) {
-                                        holder.actionIOField.setText(actionInvocation.getOutputMap().toString());
-                                    }
-                                }
-                            });
-                        }
-
-                        @Override
-                        public void failure(ActionInvocation actionInvocation, final UpnpResponse upnpResponse, String s) {
-                            deviceActivity.runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    holder.actionIOField.setText("Fail! " + upnpResponse.getResponseDetails());
-                                }
-                            });
-                        }
-                    });
-                    holder.actionIOField.setText("Waiting for response...");
-                }
-            });
         }
+//        else {
+//            holder.actionName.setText(action.getFirstOutputArgument().getRelatedStateVariableName());
+//
+//            holder.actionIOField.setVisibility(View.VISIBLE);
+//            holder.invokeButton.setVisibility(View.VISIBLE);
+//
+//            holder.invokeButton.setOnClickListener(new View.OnClickListener() {
+//                @Override
+//                public void onClick(View view) {
+//                    Log.e("invoking", "clicked");
+//                    GenericActionInvocation genericActionInvocation = new GenericActionInvocation(action);
+//                    Log.e("invoking", "action created");
+//
+//                    genericActionInvocation.getOutput(action.getFirstOutputArgument().getName());
+//
+//                    upnpService.getControlPoint().execute(new ActionCallback(genericActionInvocation) {
+//                        @Override
+//                        public void success(final ActionInvocation actionInvocation) {
+//                            deviceActivity.runOnUiThread(new Runnable() {
+//                                @Override
+//                                public void run() {
+//                                    if (actionInvocation.getOutput().length > 0) {
+//                                        holder.actionIOField.setText(actionInvocation.getOutputMap().toString());
+//                                    }
+//                                }
+//                            });
+//                        }
+//
+//                        @Override
+//                        public void failure(ActionInvocation actionInvocation, final UpnpResponse upnpResponse, String s) {
+//                            deviceActivity.runOnUiThread(new Runnable() {
+//                                @Override
+//                                public void run() {
+//                                    holder.actionIOField.setText("Fail! " + upnpResponse.getResponseDetails());
+//                                }
+//                            });
+//                        }
+//                    });
+//                    holder.actionIOField.setText("Waiting for response...");
+//                }
+//            });
+//        }
     }
 
     @Override
     public int getItemCount() {
-        return actions.size();
+        int size = 0;
+
+        for (Action action : actions) {
+            if (action.getInputArguments().length > 0) size++;
+        }
+
+        return size;
+
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder {
@@ -218,5 +274,6 @@ public class DeviceActionAdapter extends RecyclerView.Adapter<DeviceActionAdapte
 
     public void addAction(Action action) {
         actions.add(action);
+        if (action.getInputArguments().length > 0) editableActions.add(action);
     }
 }

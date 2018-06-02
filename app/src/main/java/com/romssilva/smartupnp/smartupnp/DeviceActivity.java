@@ -190,15 +190,14 @@ public class DeviceActivity extends AppCompatActivity {
                 for (Service service : device.getServices()) {
                     for (Action action : service.getActions()) {
                         deviceActionAdapter.addAction(action);
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                deviceActionAdapter.notifyDataSetChanged();
-                            }
-                        });
                     }
                 }
-
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        deviceActionAdapter.notifyDataSetChanged();
+                    }
+                });
             }
         }
 
