@@ -179,7 +179,7 @@ public class DeviceActivity extends AppCompatActivity {
         }
 
         public void deviceAdded(final Device device) {
-            if (device.isFullyHydrated()) {
+            if (device.isFullyHydrated() && device.getIdentity().getUdn().equals(udn)) {
                 runOnUiThread(new Runnable() {
                     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
                     @Override

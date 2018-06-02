@@ -51,8 +51,11 @@ public class DeviceFoundAdapter extends RecyclerView.Adapter<DeviceFoundAdapter.
             final DeviceDisplay deviceDisplay = devices.get(position);
             holder.deviceFoundTitle.setText(deviceDisplay.device.getDetails().getFriendlyName());
             holder.deviceFoundSubtitle.setText(deviceDisplay.device.getDisplayString());
-            if (deviceDisplay.device.getDetails().getFriendlyName().toLowerCase().contains("light"))
+            if (deviceDisplay.device.getDetails().getFriendlyName().toLowerCase().contains("light")) {
                 holder.deviceFoundImage.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.ic_light));
+            } else {
+                holder.deviceFoundImage.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.ic_device));
+            }
 
 
             holder.itemView.setOnClickListener(new View.OnClickListener() {
