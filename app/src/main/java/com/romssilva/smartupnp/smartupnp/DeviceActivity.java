@@ -1,6 +1,7 @@
 package com.romssilva.smartupnp.smartupnp;
 
 import android.annotation.TargetApi;
+import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -16,6 +17,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 import android.widget.Toolbar;
 
 import org.fourthline.cling.android.AndroidUpnpService;
@@ -34,6 +36,8 @@ import org.fourthline.cling.registry.DefaultRegistryListener;
 import org.fourthline.cling.registry.Registry;
 
 import java.util.ArrayList;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class DeviceActivity extends AppCompatActivity {
 
@@ -50,6 +54,9 @@ public class DeviceActivity extends AppCompatActivity {
     private AndroidUpnpService upnpService;
 
     private DeviceActionAdapter deviceActionAdapter;
+
+    private Timer timer1;
+    private Timer timer2;
 
     private ServiceConnection serviceConnection = new ServiceConnection() {
 
@@ -118,6 +125,31 @@ public class DeviceActivity extends AppCompatActivity {
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getApplicationContext());
 
         deviceActionsList.setLayoutManager(linearLayoutManager);
+
+        timer1 = new Timer();
+        timer2 = new Timer();
+
+        timer1.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                runOnUiThread(new Runnable() {
+                    public void run() {
+                        deviceName.setText("The device is taking too long to respond...");
+                    }
+                });
+                timer2.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        runOnUiThread(new Runnable() {
+                            public void run() {
+                                Toast.makeText(DeviceActivity.this, "Device is currently not available. Please make sure it is connected to the network and try again.", Toast.LENGTH_LONG).show();
+                            }
+                        });
+                        finish();
+                    }
+                }, 5000);
+            }
+        }, 5000);
     }
 
     @Override
@@ -180,6 +212,8 @@ public class DeviceActivity extends AppCompatActivity {
 
         public void deviceAdded(final Device device) {
             if (device.isFullyHydrated() && device.getIdentity().getUdn().equals(udn)) {
+                timer1.cancel();
+                timer2.cancel();
                 runOnUiThread(new Runnable() {
                     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
                     @Override

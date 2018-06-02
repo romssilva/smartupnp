@@ -16,6 +16,8 @@ import org.w3c.dom.Text;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  * Created by romssilva on 2018-04-08.
@@ -32,6 +34,8 @@ public class SearchTab extends Fragment {
     private TextView searchingLabel;
 
     private AndroidUpnpService upnpService;
+
+    Timer timer;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -57,6 +61,7 @@ public class SearchTab extends Fragment {
                     });
                     upnpService.getControlPoint().search();
                 }
+                startSearchTimer();
             }
         });
 
@@ -65,6 +70,8 @@ public class SearchTab extends Fragment {
 
         deviceFoundAdapter = new DeviceFoundAdapter(rootView.getContext());
         devicesList.setAdapter(deviceFoundAdapter);
+
+        startSearchTimer();
 
         return rootView;
     }
@@ -76,8 +83,26 @@ public class SearchTab extends Fragment {
             public void run() {
                 deviceFoundAdapter.notifyDataSetChanged();
                 searchingLabel.setVisibility(View.GONE);
+                timer.cancel();
             }
         });
+    }
+
+    private void startSearchTimer() {
+        searchingLabel.setText("Searching for smart devices...");
+        timer = new Timer();
+
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                getActivity().runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        searchingLabel.setText("No smart devices found. Please try again.");
+                    }
+                });
+            }
+        }, 5000);
     }
 
     public void setUpnpService(AndroidUpnpService upnpService) {
