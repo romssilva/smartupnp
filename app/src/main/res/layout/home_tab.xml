@@ -22,8 +22,9 @@
             android:id="@+id/imageView"
             android:layout_width="match_parent"
             android:layout_height="119dp"
+            android:layout_marginBottom="8dp"
             android:alpha="0.3"
-            android:src="@drawable/lamp"
+            android:src="@drawable/ic_lamp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.502"
             app:layout_constraintStart_toStartOf="parent"
@@ -31,13 +32,14 @@
 
         <TextView
             android:id="@+id/textView2"
-            android:layout_width="144dp"
+            android:layout_width="176dp"
             android:layout_height="40dp"
             android:layout_marginTop="8dp"
             android:alpha="0.3"
+            android:fontFamily="@font/montserrat_medium"
             android:text="You have no favorites devices yet."
             android:textAlignment="center"
-            android:textColor="@android:color/black"
+            android:textColor="@color/PrimaryText"
             android:textStyle="bold"
             app:layout_constraintTop_toBottomOf="@+id/imageView"
             tools:layout_editor_absoluteX="90dp" />

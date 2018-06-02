@@ -40,6 +40,7 @@ public class DeviceActivity extends AppCompatActivity {
     private TextView deviceName;
     private UDN udn;
     private Button favoriteButton;
+    private TextView bottomBar;
 
     private FavoritesManagar favoritesManagar;
 
@@ -79,9 +80,10 @@ public class DeviceActivity extends AppCompatActivity {
         setContentView(R.layout.activity_device);
 
         deviceName = findViewById(R.id.device_name);
-        deviceName.setText("Gathering device information...");
+        deviceName.setText("Obtaining device information...");
 
         favoriteButton = findViewById(R.id.favorite_btn);
+        bottomBar = findViewById(R.id.textViewBar);
 
         favoriteButton.setOnClickListener(new View.OnClickListener() {
             @TargetApi(Build.VERSION_CODES.LOLLIPOP)
@@ -90,10 +92,10 @@ public class DeviceActivity extends AppCompatActivity {
             public void onClick(View view) {
                 if (favoritesManagar.isFavorite(deviceDisplay)) {
                     favoritesManagar.removeDevice(deviceDisplay);
-                    favoriteButton.setBackground(getDrawable(android.R.drawable.btn_star_big_off));
+                    favoriteButton.setBackground(getDrawable(R.drawable.ic_star_empty));
                 } else {
                     favoritesManagar.addDevice(deviceDisplay);
-                    favoriteButton.setBackground(getDrawable(android.R.drawable.btn_star_big_on));
+                    favoriteButton.setBackground(getDrawable(R.drawable.ic_star_full));
                 }
             }
         });
@@ -180,11 +182,13 @@ public class DeviceActivity extends AppCompatActivity {
                         deviceDisplay = new DeviceDisplay(device);
                         deviceName.setText(device.getDetails().getFriendlyName());
                         if (favoritesManagar.isFavorite(deviceDisplay)) {
-                            favoriteButton.setBackground(getDrawable(android.R.drawable.btn_star_big_on));
+                            favoriteButton.setBackground(getDrawable(R.drawable.ic_star_full));
                         } else {
-                            favoriteButton.setBackground(getDrawable(android.R.drawable.btn_star_big_off));
+                            favoriteButton.setBackground(getDrawable(R.drawable.ic_star_empty));
                         }
                         favoriteButton.setVisibility(View.VISIBLE);
+                        bottomBar.setVisibility(View.VISIBLE);
+
                     }
                 });
                 for (Service service : device.getServices()) {
