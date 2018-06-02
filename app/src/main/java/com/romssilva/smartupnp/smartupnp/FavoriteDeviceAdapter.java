@@ -2,10 +2,12 @@ package com.romssilva.smartupnp.smartupnp;
 
 import android.content.Context;
 import android.content.Intent;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import org.fourthline.cling.model.meta.Device;
@@ -45,6 +47,8 @@ public class FavoriteDeviceAdapter extends RecyclerView.Adapter<FavoriteDeviceAd
             final DeviceDisplay deviceDisplay = devices.get(position);
             holder.favDeviceTitle.setText(deviceDisplay.device.getDetails().getFriendlyName());
             holder.favDeviceDesc.setText(deviceDisplay.device.getDisplayString());
+            if (deviceDisplay.device.getDetails().getFriendlyName().toLowerCase().contains("light"))
+                holder.favImageIcon.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.ic_light));
 
             holder.itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -68,12 +72,14 @@ public class FavoriteDeviceAdapter extends RecyclerView.Adapter<FavoriteDeviceAd
 
         public TextView favDeviceTitle;
         public TextView favDeviceDesc;
+        public ImageView favImageIcon;
 
         public FavoriteDeviceViewHolder(View itemView) {
             super(itemView);
 
             favDeviceTitle = (TextView) itemView.findViewById(R.id.fav_device_title);
             favDeviceDesc = (TextView) itemView.findViewById(R.id.fav_device_desc);
+            favImageIcon = (ImageView) itemView.findViewById(R.id.fav_device_image);
         }
     }
 }
