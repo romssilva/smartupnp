@@ -16,6 +16,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toolbar;
 
 import org.fourthline.cling.android.AndroidUpnpService;
 import org.fourthline.cling.android.AndroidUpnpServiceImpl;
@@ -84,6 +85,10 @@ public class DeviceActivity extends AppCompatActivity {
 
         favoriteButton = findViewById(R.id.favorite_btn);
         bottomBar = findViewById(R.id.textViewBar);
+
+        android.support.v7.widget.Toolbar toolbar = (android.support.v7.widget.Toolbar) findViewById(R.id.device_toolbar);
+        setSupportActionBar(toolbar);
+        getSupportActionBar().setTitle(null);
 
         favoriteButton.setOnClickListener(new View.OnClickListener() {
             @TargetApi(Build.VERSION_CODES.LOLLIPOP)

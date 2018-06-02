@@ -152,7 +152,6 @@ public class DeviceActionAdapter extends RecyclerView.Adapter<DeviceActionAdapte
             } else if (datatype.getBuiltin() == Datatype.Builtin.STRING) {
                 holder.editText.setVisibility(View.VISIBLE);
                 holder.invokeButton.setVisibility(View.VISIBLE);
-                holder.invokeButton.setText("Set");
 
                 holder.invokeButton.setOnClickListener(new View.OnClickListener() {
                     @Override
