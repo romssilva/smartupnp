@@ -112,7 +112,7 @@ public class DeviceActivity extends AppCompatActivity {
             }
         });
 
-        favoritesManagar = FavoritesManagar.getInstance();
+        favoritesManagar = FavoritesManagar.getInstance(getApplicationContext());
 
         getIncomingIntent();
     }

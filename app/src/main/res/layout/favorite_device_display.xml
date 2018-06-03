@@ -22,7 +22,8 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/ic_device" />
+        app:srcCompat="@drawable/ic_device"
+        android:layout_marginLeft="8dp" />
 
     <RelativeLayout
         android:id="@+id/fav_relative_layout"
@@ -31,7 +32,8 @@
         android:layout_marginStart="16dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toEndOf="@+id/fav_device_image"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintTop_toTopOf="parent"
+        android:layout_marginLeft="16dp">
 
         <TextView
             android:id="@+id/fav_device_title"
@@ -44,7 +46,6 @@
             android:text="Device Title"
             android:textColor="@color/PrimaryText"
             android:textSize="16sp"
-            app:layout_constraintStart_toEndOf="@+id/fav_device_image"
             tools:layout_editor_absoluteY="16dp" />
 
         <TextView
@@ -70,6 +71,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/ic_arrow_right" />
+        app:srcCompat="@drawable/ic_arrow_right"
+        android:layout_marginRight="8dp" />
 
 </android.support.constraint.ConstraintLayout>

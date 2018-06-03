@@ -83,7 +83,7 @@ public class CameraTab extends Fragment {
     }
 
     private static final int CAMERA_ID = -1;
-    private static final boolean USE_FRONT_CAMERA = true;
+    private static final boolean USE_FRONT_CAMERA = false;
     private static final boolean DEBUGGING = false;
 
     private String cameraId;
@@ -379,7 +379,7 @@ public class CameraTab extends Fragment {
             StringBuilder sb = new StringBuilder();
 
             Collection<Device> devices = ((MainActivity) getActivity()).getDevicesList();
-            if (devices != null) {
+            if (devices != null && mostLikelyClass != null && mostLikelyClass.getKey() != null) {
                 for (Device device : devices) {
                     String[] words = mostLikelyClass.getKey().split(" ");
                     for (String word : words) {
@@ -422,7 +422,7 @@ public class CameraTab extends Fragment {
     }
 
     private void showToast(final Map.Entry<String, Float> entry) {
-        if (DEBUGGING) return;
+        if (!DEBUGGING) return;
         final Activity activity = getActivity();
         if (activity != null) {
             activity.runOnUiThread(
@@ -436,7 +436,7 @@ public class CameraTab extends Fragment {
     }
 
     private void showToast(final String text) {
-        if (DEBUGGING) return;
+        if (!DEBUGGING) return;
         final Activity activity = getActivity();
         if (activity != null) {
             activity.runOnUiThread(

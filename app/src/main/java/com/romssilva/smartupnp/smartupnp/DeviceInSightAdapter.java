@@ -2,10 +2,13 @@ package com.romssilva.smartupnp.smartupnp;
 
 import android.content.Context;
 import android.content.Intent;
+import android.media.Image;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import org.fourthline.cling.model.meta.Device;
@@ -44,6 +47,8 @@ public class DeviceInSightAdapter extends RecyclerView.Adapter<DeviceInSightAdap
             final DeviceDisplay deviceDisplay = devices.get(position);
             holder.deviceName.setText(deviceDisplay.device.getDetails().getFriendlyName());
             holder.deviceDesc.setText(deviceDisplay.device.getDisplayString());
+            if (deviceDisplay.device.getDetails().getFriendlyName().toLowerCase().contains("light"))
+                holder.deviceImage.setImageDrawable(ContextCompat.getDrawable(context, R.drawable.ic_light));
 
             holder.itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -66,12 +71,14 @@ public class DeviceInSightAdapter extends RecyclerView.Adapter<DeviceInSightAdap
 
         public TextView deviceName;
         public TextView deviceDesc;
+        public ImageView deviceImage;
 
         public DeviceInSightViewHolder(View itemView) {
             super(itemView);
 
             deviceName = (TextView) itemView.findViewById(R.id.device_name);
             deviceDesc = (TextView) itemView.findViewById(R.id.device_desc);
+            deviceImage = (ImageView) itemView.findViewById(R.id.device_in_sight_image);
         }
     }
 

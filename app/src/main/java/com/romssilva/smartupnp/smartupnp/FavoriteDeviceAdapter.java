@@ -25,7 +25,7 @@ public class FavoriteDeviceAdapter extends RecyclerView.Adapter<FavoriteDeviceAd
     private Context context;
 
     public FavoriteDeviceAdapter(Context context) {
-        devices = FavoritesManagar.getInstance().getFavorites();
+        devices = FavoritesManagar.getInstance(context).getFavorites();
         this.context = context;
     }
 

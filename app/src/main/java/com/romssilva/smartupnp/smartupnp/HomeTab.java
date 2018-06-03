@@ -44,7 +44,7 @@ public class HomeTab extends Fragment {
             @Override
             public void run() {
                 favoriteDeviceAdapter.notifyDataSetChanged();
-                if (FavoritesManagar.getInstance().getFavorites().isEmpty()) {
+                if (FavoritesManagar.getInstance(getActivity().getApplicationContext()).getFavorites().isEmpty()) {
                     favoriteEmpty.setVisibility(View.VISIBLE);
                     favoriteList.setVisibility(View.GONE);
                 } else {
