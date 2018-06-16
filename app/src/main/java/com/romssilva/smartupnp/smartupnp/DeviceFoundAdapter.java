@@ -61,9 +61,15 @@ public class DeviceFoundAdapter extends RecyclerView.Adapter<DeviceFoundAdapter.
             holder.itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    Intent intent = new Intent(context, DeviceActivity.class);
-                    intent.putExtra("device_udn", deviceDisplay.getDevice().getIdentity().getUdn().getIdentifierString());
-                    context.startActivity(intent);
+                    String controlAppPackage = deviceDisplay.getDevice().getDetails().getPresentationURI().toString();
+                    Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(controlAppPackage);
+                    if (launchIntent != null) {
+                        context.startActivity(launchIntent);//null pointer check in case package name was not found
+                    } else {
+                        Intent intent = new Intent(context, DeviceActivity.class);
+                        intent.putExtra("device_udn", deviceDisplay.getDevice().getIdentity().getUdn().getIdentifierString());
+                        context.startActivity(intent);
+                    }
                 }
             });
 
