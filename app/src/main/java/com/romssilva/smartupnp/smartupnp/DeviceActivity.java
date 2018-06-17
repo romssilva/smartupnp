@@ -157,6 +157,8 @@ public class DeviceActivity extends AppCompatActivity {
         super.onDestroy();
         if (upnpService != null) {
             upnpService.getRegistry().removeListener(registryListener);
+
+            upnpService.getControlPoint().search();
         }
         // This will stop the UPnP service if nobody else is bound to it
         getApplicationContext().unbindService(serviceConnection);
