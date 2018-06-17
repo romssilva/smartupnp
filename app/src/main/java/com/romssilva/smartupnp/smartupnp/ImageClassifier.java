@@ -169,11 +169,20 @@ public abstract class ImageClassifier {
     }
 
     /** Memory-map the model file in Assets. */
-    private MappedByteBuffer loadModelFile(Activity activity) throws IOException {
-        String modelPath = getModelPath();
-        AssetManager assetManager = activity.getAssets();
-        AssetFileDescriptor fileDescriptor = assetManager.openFd(modelPath);
+//    private MappedByteBuffer loadModelFile(Activity activity) throws IOException {
+//        String modelPath = getModelPath();
+//        AssetManager assetManager = activity.getAssets();
+//        AssetFileDescriptor fileDescriptor = assetManager.openFd(modelPath);
+//
+//        FileInputStream inputStream = new FileInputStream(fileDescriptor.getFileDescriptor());
+//        FileChannel fileChannel = inputStream.getChannel();
+//        long startOffset = fileDescriptor.getStartOffset();
+//        long declaredLength = fileDescriptor.getDeclaredLength();
+//        return fileChannel.map(FileChannel.MapMode.READ_ONLY, startOffset, declaredLength);
+//    }
 
+    private MappedByteBuffer loadModelFile(Activity activity) throws IOException {
+        AssetFileDescriptor fileDescriptor = activity.getAssets().openFd(getModelPath());
         FileInputStream inputStream = new FileInputStream(fileDescriptor.getFileDescriptor());
         FileChannel fileChannel = inputStream.getChannel();
         long startOffset = fileDescriptor.getStartOffset();

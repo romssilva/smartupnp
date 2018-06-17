@@ -60,6 +60,7 @@ android {
 
     aaptOptions {
         noCompress "tflite"
+        noCompress "lite"
     }
 
     sourceSets { main { assets.srcDirs = ['src/main/assets', 'src/main/assets/'] } }

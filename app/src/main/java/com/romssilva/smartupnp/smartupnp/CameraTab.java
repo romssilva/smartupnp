@@ -84,7 +84,7 @@ public class CameraTab extends Fragment {
 
     private static final int CAMERA_ID = -1;
     private static final boolean USE_FRONT_CAMERA = false;
-    private static final boolean DEBUGGING = false;
+    private static final boolean DEBUGGING = true;
 
     private String cameraId;
     private CameraManager cameraManager;
@@ -370,7 +370,7 @@ public class CameraTab extends Fragment {
         Bitmap bitmap = textureView.getBitmap(classifier.getImageSizeX(), classifier.getImageSizeY());
         String textToShow = classifier.classifyFrame(bitmap);
 
-        //todo
+        showToast(textToShow);
 
         if (classifier.readyToGuess()) {
             Map.Entry<String, Float> mostLikelyClass = classifier.getMostLikelyClass();
