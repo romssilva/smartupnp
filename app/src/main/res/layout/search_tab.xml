@@ -4,8 +4,6 @@
     android:id="@+id/constraintLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:layout_marginBottom="?attr/actionBarSize"
-    android:paddingTop="4dp"
     tools:context="com.romssilva.smartupnp.smartupnp.SearchTab">
 
     <TextView
@@ -24,6 +22,8 @@
         android:id="@+id/devices_found_list"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:paddingBottom="4dp"
+        android:paddingTop="4dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"></android.support.v7.widget.RecyclerView>
