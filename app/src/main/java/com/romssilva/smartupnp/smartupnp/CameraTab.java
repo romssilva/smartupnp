@@ -56,6 +56,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
@@ -83,7 +84,7 @@ public class CameraTab extends Fragment {
     }
 
     private static final int CAMERA_ID = -1;
-    private static final boolean USE_FRONT_CAMERA = false;
+    private static final boolean USE_FRONT_CAMERA = true;
     private static final boolean DEBUGGING = true;
 
     private String cameraId;
@@ -109,7 +110,7 @@ public class CameraTab extends Fragment {
     private RecyclerView devicesList;
     private DeviceInSightAdapter deviceInSightAdapter;
 
-    private List<Timer> timers;
+    private HashMap<String, Timer> timers;
 
     private CameraDevice.StateCallback stateCallback = new CameraDevice.StateCallback() {
         @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
@@ -195,7 +196,7 @@ public class CameraTab extends Fragment {
         deviceInSightAdapter = new DeviceInSightAdapter(rootView.getContext());
         devicesList.setAdapter(deviceInSightAdapter);
 
-        timers = new ArrayList<>();
+        timers = new HashMap<>();
 
         return rootView;
     }
@@ -397,17 +398,11 @@ public class CameraTab extends Fragment {
     }
 
     private void setupTimer(final Device device) {
-        int position = deviceInSightAdapter.getDevicePosition(device);
+        String deviceIdentifierString = device.getIdentity().getUdn().getIdentifierString();
 
-        Timer timer = null;
+        Timer timer = timers.get(deviceIdentifierString);
 
-        if (timers.size() > position) {
-            timer = timers.get(position);
-        }
-
-        if (timer == null) {
-            timers.add(position, timer);
-        } else {
+        if (timer != null) {
             timer.cancel();
         }
 
@@ -419,6 +414,8 @@ public class CameraTab extends Fragment {
                 removeDevice(device);
             }
         }, 10000);
+
+        timers.put(deviceIdentifierString, timer);
     }
 
     private void showToast(final Map.Entry<String, Float> entry) {
