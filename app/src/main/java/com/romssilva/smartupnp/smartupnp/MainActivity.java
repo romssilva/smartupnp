@@ -1,16 +1,15 @@
 package com.romssilva.smartupnp.smartupnp;
 
+import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.os.Build;
 import android.os.IBinder;
+import android.support.annotation.RequiresApi;
 import android.support.design.widget.TabLayout;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 
 import android.support.v4.app.Fragment;
@@ -21,23 +20,20 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
 
 import android.widget.Toast;
 
 import org.fourthline.cling.android.AndroidUpnpService;
 import org.fourthline.cling.android.AndroidUpnpServiceImpl;
 import org.fourthline.cling.android.FixedAndroidLogHandler;
-import org.fourthline.cling.controlpoint.ActionCallback;
-import org.fourthline.cling.model.action.ActionInvocation;
-import org.fourthline.cling.model.message.UpnpResponse;
-import org.fourthline.cling.model.meta.Action;
 import org.fourthline.cling.model.meta.Device;
 import org.fourthline.cling.model.meta.LocalDevice;
 import org.fourthline.cling.model.meta.RemoteDevice;
-import org.fourthline.cling.model.meta.Service;
 import org.fourthline.cling.registry.DefaultRegistryListener;
 import org.fourthline.cling.registry.Registry;
+
+import java.util.ArrayList;
+import java.util.Collection;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -54,6 +50,11 @@ public class MainActivity extends AppCompatActivity {
     /**
      * The {@link ViewPager} that will host the section contents.
      */
+
+    private static final String TAG = "MainActivity";
+
+    private Activity mainActivity;
+
     private ViewPager mViewPager;
 
     private BrowseRegistryListener registryListener = new BrowseRegistryListener();
@@ -61,11 +62,16 @@ public class MainActivity extends AppCompatActivity {
     private AndroidUpnpService upnpService;
 
     private SearchTab searchTab;
+    private CameraTab cameraTab;
+    private HomeTab homeTab;
 
     private ServiceConnection serviceConnection = new ServiceConnection() {
 
         public void onServiceConnected(ComponentName className, IBinder service) {
+            Log.i(TAG, "STARTING UPNP SERVICE.");
             upnpService = (AndroidUpnpService) service;
+
+            searchTab.setUpnpService(upnpService);
 
             // Get ready for future device advertisements
             upnpService.getRegistry().addListener(registryListener);
@@ -75,6 +81,7 @@ public class MainActivity extends AppCompatActivity {
                 registryListener.deviceAdded(device);
             }
 
+            Log.i(TAG, "WILL START SEARCHING.");
             // Search asynchronously for all devices, they will respond soon
             upnpService.getControlPoint().search();
         }
@@ -89,52 +96,69 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        mainActivity = this;
+
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        getSupportActionBar().setTitle(null);
         // Create the adapter that will return a fragment for each of the three
         // primary sections of the activity.
         mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
 
         // Set up the ViewPager with the sections adapter.
-        mViewPager = (ViewPager) findViewById(R.id.container);
+        mViewPager = findViewById(R.id.container);
         mViewPager.setAdapter(mSectionsPagerAdapter);
 
-        TabLayout tabLayout = (TabLayout) findViewById(R.id.tabs);
+        TabLayout tabLayout = findViewById(R.id.tabs);
 
-        mViewPager.setCurrentItem(2);
+        mViewPager.setCurrentItem(1);
         mViewPager.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(tabLayout) {
+            @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
             @Override
-            public void onPageScrolled(int position, float positionOffset, int positionOffsetPixels) {
-                super.onPageScrolled(position, positionOffset, positionOffsetPixels);
-                if (position == 2 && upnpService != null) {
-                    upnpService.getRegistry().removeAllRemoteDevices();
-                    upnpService.getControlPoint().search();
+            public void onPageSelected(int position) {
+                super.onPageSelected(position);
+
+                if (position != 0 && cameraTab != null) {
+                    cameraTab.stop();
+                }
+
+                if (position == 0 && cameraTab != null) {
+                    cameraTab.start();
+                }
+
+                if (position == 1) {
+                    updateFavorites();
+                }
+
+                if (position == 2) {
+                    if (upnpService != null) {
+                        Collection<Device> devices = upnpService.getRegistry().getDevices();
+                        for (Device device : devices) {
+                            searchTab.addDevice(device);
+                        }
+                    }
                 }
             }
         });
 
         tabLayout.addOnTabSelectedListener(new TabLayout.ViewPagerOnTabSelectedListener(mViewPager));
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
-
         // Fix the logging integration between java.util.logging and Android internal logging
         org.seamless.util.logging.LoggingUtil.resetRootHandler(
                 new FixedAndroidLogHandler()
         );
 
-        // This will start the UPnP service if it wasn't already started
-        getApplicationContext().bindService(
-                new Intent(this, AndroidUpnpServiceImpl.class),
-                serviceConnection,
-                Context.BIND_AUTO_CREATE
-        );
+        if (upnpService == null) {
+            // This will start the UPnP service if it wasn't already started
+            getApplicationContext().bindService(
+                    new Intent(mainActivity, AndroidUpnpServiceImpl.class),
+                    serviceConnection,
+                    Context.BIND_AUTO_CREATE
+            );
+        } else {
+            upnpService.getRegistry().removeAllRemoteDevices();
+            upnpService.getControlPoint().search();
+        }
     }
 
     @Override
@@ -145,29 +169,6 @@ public class MainActivity extends AppCompatActivity {
         }
         // This will stop the UPnP service if nobody else is bound to it
         getApplicationContext().unbindService(serviceConnection);
-    }
-
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
     }
 
     /**
@@ -186,9 +187,11 @@ public class MainActivity extends AppCompatActivity {
             // Return a PlaceholderFragment (defined as a static inner class below).
             switch (position) {
                 case 0:
-                    return new CameraTab();
+                    cameraTab = new CameraTab();
+                    return cameraTab;
                 case 1:
-                    return new HomeTab();
+                    homeTab = new HomeTab();
+                    return homeTab;
                 case 2:
                     searchTab = new SearchTab();
                     return searchTab;
@@ -209,7 +212,7 @@ public class MainActivity extends AppCompatActivity {
         /* Discovery performance optimization for very slow Android devices! */
         @Override
         public void remoteDeviceDiscoveryStarted(Registry registry, RemoteDevice device) {
-            deviceAdded(device);
+            //deviceAdded(device);
         }
 
         @Override
@@ -235,7 +238,7 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void remoteDeviceRemoved(Registry registry, RemoteDevice device) {
-            deviceRemoved(device);
+            //deviceRemoved(device);
         }
 
         @Override
@@ -245,11 +248,13 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void localDeviceRemoved(Registry registry, LocalDevice device) {
-            deviceRemoved(device);
+            //deviceRemoved(device);
         }
 
         public void deviceAdded(final Device device) {
-            searchTab.addDevice(device);
+            if (searchTab != null) {
+                searchTab.addDevice(device);
+            }
         }
 
         public void deviceRemoved(final Device device) {
@@ -258,45 +263,16 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
         }
+    }
 
-        public void executeAction(AndroidUpnpService upnpService, Action action) {
-
-            ActionInvocation toggleActionInvocation = new GenericActionInvocation(action);
-
-            upnpService.getControlPoint().execute(new ActionCallback(toggleActionInvocation) {
-                @Override
-                public void success(ActionInvocation actionInvocation) {
-                    Log.i("Action Callback", "Success!");
-                }
-
-                @Override
-                public void failure(ActionInvocation actionInvocation, UpnpResponse upnpResponse, String s) {
-                    Log.i("Action Callback", "Failed!");
-                }
-            });
+    public Collection<Device> getDevicesList() {
+        if (upnpService != null) {
+            return upnpService.getRegistry().getDevices();
         }
+        return null;
+    }
 
-        public void executeActions (AndroidUpnpService upnpService, DeviceDisplay deviceDisplay) {
-            Device device = deviceDisplay.getDevice();
-
-            for (Service service : device.getServices()) {
-                for (Action action : service.getActions()) {
-
-                    ActionInvocation toggleActionInvocation = new GenericActionInvocation(action);
-
-                    upnpService.getControlPoint().execute(new ActionCallback(toggleActionInvocation) {
-                        @Override
-                        public void success(ActionInvocation actionInvocation) {
-                            Log.i("Action Callback", "Success!");
-                        }
-
-                        @Override
-                        public void failure(ActionInvocation actionInvocation, UpnpResponse upnpResponse, String s) {
-                            Log.i("Action Callback", "Failed!");
-                        }
-                    });
-                }
-            }
-        }
+    public void updateFavorites() {
+        homeTab.updateFavorites();
     }
 }

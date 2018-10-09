@@ -1,17 +1,24 @@
 package com.romssilva.smartupnp.smartupnp;
 
+import android.annotation.TargetApi;
+import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.os.Build;
 import android.os.IBinder;
+import android.support.annotation.RequiresApi;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
+import android.widget.Toolbar;
 
 import org.fourthline.cling.android.AndroidUpnpService;
 import org.fourthline.cling.android.AndroidUpnpServiceImpl;
@@ -29,18 +36,27 @@ import org.fourthline.cling.registry.DefaultRegistryListener;
 import org.fourthline.cling.registry.Registry;
 
 import java.util.ArrayList;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class DeviceActivity extends AppCompatActivity {
 
     private DeviceDisplay deviceDisplay;
     private TextView deviceName;
     private UDN udn;
+    private Button favoriteButton;
+    private TextView bottomBar;
+
+    private FavoritesManagar favoritesManagar;
 
     private BrowseRegistryListener registryListener = new BrowseRegistryListener();
 
     private AndroidUpnpService upnpService;
 
     private DeviceActionAdapter deviceActionAdapter;
+
+    private Timer timer1;
+    private Timer timer2;
 
     private ServiceConnection serviceConnection = new ServiceConnection() {
 
@@ -72,7 +88,31 @@ public class DeviceActivity extends AppCompatActivity {
         setContentView(R.layout.activity_device);
 
         deviceName = findViewById(R.id.device_name);
-        deviceName.setText("Gathering device information...");
+        deviceName.setText("Obtaining device information...");
+
+        favoriteButton = findViewById(R.id.favorite_btn);
+        bottomBar = findViewById(R.id.textViewBar);
+
+        android.support.v7.widget.Toolbar toolbar = (android.support.v7.widget.Toolbar) findViewById(R.id.device_toolbar);
+        setSupportActionBar(toolbar);
+        getSupportActionBar().setTitle(null);
+
+        favoriteButton.setOnClickListener(new View.OnClickListener() {
+            @TargetApi(Build.VERSION_CODES.LOLLIPOP)
+            @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
+            @Override
+            public void onClick(View view) {
+                if (favoritesManagar.isFavorite(deviceDisplay)) {
+                    favoritesManagar.removeDevice(deviceDisplay);
+                    favoriteButton.setBackground(getDrawable(R.drawable.ic_star_empty));
+                } else {
+                    favoritesManagar.addDevice(deviceDisplay);
+                    favoriteButton.setBackground(getDrawable(R.drawable.ic_star_full));
+                }
+            }
+        });
+
+        favoritesManagar = FavoritesManagar.getInstance(getApplicationContext());
 
         getIncomingIntent();
     }
@@ -85,6 +125,31 @@ public class DeviceActivity extends AppCompatActivity {
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getApplicationContext());
 
         deviceActionsList.setLayoutManager(linearLayoutManager);
+
+        timer1 = new Timer();
+        timer2 = new Timer();
+
+        timer1.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                runOnUiThread(new Runnable() {
+                    public void run() {
+                        deviceName.setText("The device is taking too long to respond...");
+                    }
+                });
+                timer2.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        runOnUiThread(new Runnable() {
+                            public void run() {
+                                Toast.makeText(DeviceActivity.this, "Device is currently not available. Please make sure it is connected to the network and try again.", Toast.LENGTH_LONG).show();
+                            }
+                        });
+                        finish();
+                    }
+                }, 5000);
+            }
+        }, 5000);
     }
 
     @Override
@@ -92,6 +157,8 @@ public class DeviceActivity extends AppCompatActivity {
         super.onDestroy();
         if (upnpService != null) {
             upnpService.getRegistry().removeListener(registryListener);
+
+            upnpService.getControlPoint().search();
         }
         // This will stop the UPnP service if nobody else is bound to it
         getApplicationContext().unbindService(serviceConnection);
@@ -146,25 +213,36 @@ public class DeviceActivity extends AppCompatActivity {
         }
 
         public void deviceAdded(final Device device) {
-            if (device.isFullyHydrated()) {
+            if (device.isFullyHydrated() && device.getIdentity().getUdn().equals(udn)) {
+                timer1.cancel();
+                timer2.cancel();
                 runOnUiThread(new Runnable() {
+                    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
                     @Override
                     public void run() {
+                        deviceDisplay = new DeviceDisplay(device);
                         deviceName.setText(device.getDetails().getFriendlyName());
+                        if (favoritesManagar.isFavorite(deviceDisplay)) {
+                            favoriteButton.setBackground(getDrawable(R.drawable.ic_star_full));
+                        } else {
+                            favoriteButton.setBackground(getDrawable(R.drawable.ic_star_empty));
+                        }
+                        favoriteButton.setVisibility(View.VISIBLE);
+                        bottomBar.setVisibility(View.VISIBLE);
+
                     }
                 });
                 for (Service service : device.getServices()) {
                     for (Action action : service.getActions()) {
                         deviceActionAdapter.addAction(action);
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                deviceActionAdapter.notifyDataSetChanged();
-                            }
-                        });
                     }
                 }
-
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        deviceActionAdapter.notifyDataSetChanged();
+                    }
+                });
             }
         }
 

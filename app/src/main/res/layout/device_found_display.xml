@@ -1,25 +1,76 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/linearLayout"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="@dimen/activity_horizontal_margin">
+    android:layout_marginBottom="4dp"
+    android:layout_marginLeft="8dp"
+    android:layout_marginRight="8dp"
+    android:layout_marginTop="4dp"
+    android:background="@drawable/rounded_corner"
+    android:elevation="2dp">
 
-    <TextView
-        android:id="@+id/device_found_title"
+    <ImageView
+        android:id="@+id/device_found_image"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginBottom="8dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/ic_device" />
+
+    <RelativeLayout
+        android:id="@+id/relativeLayout2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Device Title"
-        android:textColor="@color/PrimaryText"
-        android:textSize="16sp" />
+        android:layout_marginStart="16dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/device_found_image"
+        app:layout_constraintTop_toTopOf="parent">
 
-    <TextView
-        android:id="@+id/device_found_subtitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Device Subtitle"
-        android:textColor="@color/SecondaryText"
-        android:textSize="14sp" />
+        <TextView
+            android:id="@+id/device_found_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
+            android:fontFamily="@font/montserrat_medium"
+            android:text="Device Title"
+            android:textColor="@color/PrimaryText"
+            android:textSize="16sp"
+            app:layout_constraintStart_toEndOf="@+id/device_found_image"
+            tools:layout_editor_absoluteY="16dp" />
 
-</LinearLayout>
+        <TextView
+            android:id="@+id/device_found_subtitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"
+            android:layout_below="@+id/device_found_title"
+            android:fontFamily="@font/montserrat_regular"
+            android:text="Device Subtitle"
+            android:textColor="@color/SecondaryText"
+            android:textSize="14sp"
+            app:layout_constraintTop_toBottomOf="@+id/device_found_title"
+            tools:layout_editor_absoluteX="64dp" />
+
+    </RelativeLayout>
+
+    <ImageView
+        android:id="@+id/imageView3"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_marginEnd="8dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@drawable/ic_arrow_right" />
+
+</android.support.constraint.ConstraintLayout>

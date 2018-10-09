@@ -15,6 +15,7 @@ import org.fourthline.cling.model.meta.Service;
 public class DeviceDisplay {
 
     Device device;
+    String controlAppPackage;
 
     public DeviceDisplay(Device device) {
         this.device = device;
@@ -54,6 +55,14 @@ public class DeviceDisplay {
             sb.append(Resources.getSystem().getString(R.string.deviceDetailsNotYetAvailable));
         }
         return sb.toString();
+    }
+
+    public String getControlAppPackage() {
+        return controlAppPackage;
+    }
+
+    public void setControlAppPackage(String controlAppPackage) {
+        this.controlAppPackage = controlAppPackage;
     }
 
     @Override
