@@ -3,6 +3,7 @@ package com.romssilva.smartupnp.smartupnp;
 import android.content.Context;
 import android.content.Intent;
 import android.media.Image;
+import android.net.Uri;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -53,9 +54,19 @@ public class DeviceInSightAdapter extends RecyclerView.Adapter<DeviceInSightAdap
             holder.itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    Intent intent = new Intent(context, DeviceActivity.class);
-                    intent.putExtra("device_udn", deviceDisplay.getDevice().getIdentity().getUdn().getIdentifierString());
-                    context.startActivity(intent);
+                    if (deviceDisplay.getDevice().getDetails().getPresentationURI() != null) {
+                        String appPackageName = deviceDisplay.getDevice().getDetails().getPresentationURI().toString();
+                        Intent launchIntent = context.getPackageManager().getLaunchIntentForPackage(appPackageName);
+                        if (launchIntent != null) {
+                            context.startActivity(launchIntent);//null pointer check in case package name was not found
+                        } else {
+                            context.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=" + appPackageName)));
+                        }
+                    } else {
+                        Intent intent = new Intent(context, DeviceActivity.class);
+                        intent.putExtra("device_udn", deviceDisplay.getDevice().getIdentity().getUdn().getIdentifierString());
+                        context.startActivity(intent);
+                    }
                 }
             });
 

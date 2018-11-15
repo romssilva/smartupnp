@@ -1,6 +1,8 @@
 package com.romssilva.smartupnp.smartupnp;
 
 import android.content.Context;
+import android.os.Build;
+import android.support.annotation.RequiresApi;
 import android.support.constraint.ConstraintLayout;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -231,6 +233,108 @@ public class DeviceActionAdapter extends RecyclerView.Adapter<DeviceActionAdapte
                                         Log.e("UPnP", "Fail! " + upnpResponse.getResponseDetails());
                                     }
                                 });
+                            }
+                        });
+                    }
+                });
+            } else if (datatype.getBuiltin() == Datatype.Builtin.I4) {
+                final SeekBar seekBar = holder.seekBar;
+
+                seekBar.setVisibility(View.VISIBLE);
+
+                seekBar.setEnabled(false);
+
+                final long max = stateVariable.getTypeDetails().getAllowedValueRange().getMaximum();
+                final long min = stateVariable.getTypeDetails().getAllowedValueRange().getMinimum();
+
+                Action currentStatusAction = null;
+
+                for (Action oAction : action.getService().getActions()) {
+                    if (oAction.getOutputArguments().length > 0 &&
+                            oAction.getFirstOutputArgument().getRelatedStateVariableName().equals(stateVariable.getName())) {
+                        currentStatusAction = oAction;
+                        break;
+                    }
+                }
+
+                GenericActionInvocation genericActionInvocation = new GenericActionInvocation(currentStatusAction);
+
+                genericActionInvocation.getOutput(currentStatusAction.getFirstOutputArgument().getName());
+
+                upnpService.getControlPoint().execute(new ActionCallback(genericActionInvocation) {
+                    @Override
+                    public void success(final ActionInvocation actionInvocation) {
+                        deviceActivity.runOnUiThread(new Runnable() {
+                            @RequiresApi(api = Build.VERSION_CODES.O)
+                            @Override
+                            public void run() {
+                                if (actionInvocation.getOutput().length > 0) {
+
+                                    ActionArgumentValue actionArgumentValue = (ActionArgumentValue) actionInvocation.getOutputMap().get(actionInvocation.getAction().getFirstOutputArgument().getName());
+
+                                    Integer value = Integer.parseInt(actionArgumentValue.toString());
+
+                                    seekBar.setEnabled(true);
+                                    seekBar.setMax(Integer.parseInt(String.valueOf(max)));
+                                    if (Integer.parseInt(String.valueOf(min)) > 0) {
+                                        seekBar.setMin(Integer.parseInt(String.valueOf(min)));
+                                    }
+                                    seekBar.setProgress(value);
+
+                                    seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                                        @Override
+                                        public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+                                            Log.e("invoking", "clicked");
+                                            GenericActionInvocation genericActionInvocation = new GenericActionInvocation(action);
+                                            Log.e("invoking", "action created");
+
+                                            genericActionInvocation.setInput(action.getFirstInputArgument().getName(), i);
+
+                                            upnpService.getControlPoint().execute(new ActionCallback(genericActionInvocation) {
+                                                @Override
+                                                public void success(final ActionInvocation actionInvocation) {
+                                                    deviceActivity.runOnUiThread(new Runnable() {
+                                                        @Override
+                                                        public void run() {
+                                                            if (actionInvocation.getOutput().length > 0) {
+                                                                Log.e("UPnP", actionInvocation.getOutputMap().toString());
+                                                            }
+                                                        }
+                                                    });
+                                                }
+
+                                                @Override
+                                                public void failure(ActionInvocation actionInvocation, final UpnpResponse upnpResponse, String s) {
+                                                    deviceActivity.runOnUiThread(new Runnable() {
+                                                        @Override
+                                                        public void run() {
+                                                            Log.e("UPnP", "Fail! " + upnpResponse.getResponseDetails());
+                                                        }
+                                                    });
+                                                }
+                                            });
+                                        }
+
+                                        @Override
+                                        public void onStartTrackingTouch(SeekBar seekBar) {
+
+                                        }
+
+                                        @Override
+                                        public void onStopTrackingTouch(SeekBar seekBar) {
+
+                                        }
+                                    });
+                                }
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void failure(ActionInvocation actionInvocation, final UpnpResponse upnpResponse, String s) {
+                        deviceActivity.runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
                             }
                         });
                     }

@@ -84,8 +84,8 @@ public class CameraTab extends Fragment {
     }
 
     private static final int CAMERA_ID = -1;
-    private static final boolean USE_FRONT_CAMERA = true;
-    private static final boolean DEBUGGING = true;
+    private static final boolean USE_FRONT_CAMERA = false;
+    private static final boolean DEBUGGING = false;
 
     private String cameraId;
     private CameraManager cameraManager;
@@ -384,8 +384,11 @@ public class CameraTab extends Fragment {
                 for (Device device : devices) {
                     String[] words = mostLikelyClass.getKey().split(" ");
                     for (String word : words) {
-                        if (device.getDetails().getFriendlyName().toLowerCase().contains(word.toLowerCase())) {
-                        //if (true) {
+                        boolean threshold = true;
+                        if (word.contains("abajour")) {
+                            threshold = mostLikelyClass.getValue() > 3;
+                        }
+                        if (device.getDetails().getFriendlyName().toLowerCase().contains(word.toLowerCase()) && threshold) {
                             addDevice(device);
                             setupTimer(device);
                         }
